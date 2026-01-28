@@ -1127,13 +1127,16 @@ namespace AgOpenGPS
 
             if (isJobStarted)
             {
-                oglBack.Refresh();
-
                 p_239.pgn[p_239.geoStop] = mc.isOutOfBounds ? (byte)1 : (byte)0;
 
                 SendPgnToLoop(p_239.pgn);
 
                 SendPgnToLoop(p_229.pgn);
+            }
+            //update backbuffer and main window
+            if (isJobStarted)
+            {
+                oglBack.Refresh();
             }
 
             //stop the timer and calc how long it took to do calcs and draw
@@ -1142,14 +1145,13 @@ namespace AgOpenGPS
             if (frameTimeRough > 80) frameTimeRough = 80;
             frameTime = frameTime * 0.90 + frameTimeRough * 0.1;
 
-            //update main window
             oglMain.MakeCurrent();
             oglMain.Refresh();
         }
 
         private void TheRest()
         {
-            //positions and headings 
+            //positions and headings
             CalculatePositionHeading();
 
             //calculate lookahead at full speed, no sentence misses

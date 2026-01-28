@@ -812,6 +812,13 @@ namespace AgOpenGPS
         {
             oglBack.MakeCurrent();
 
+            // Enable VBO rendering after OpenGL context is active (only once)
+            if (!_vboRenderingEnabled && triStripVboManager != null)
+            {
+                _vboRenderingEnabled = true;
+                triStripVboManager.EnableVboRendering = true;
+            }
+
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
             GL.LoadIdentity();					// Reset The View
 
@@ -827,93 +834,22 @@ namespace AgOpenGPS
 
             #region Draw to Back Buffer
 
-            //patch color
-            GL.Color3((byte)0, (byte)127, (byte)0);
-
-            //to draw or not the triangle patch
-            bool isDraw;
-
-            double pivEplus = toolPos.easting + 50;
-            double pivEminus = toolPos.easting - 50;
-            double pivNplus = toolPos.northing + 50;
-            double pivNminus = toolPos.northing - 50;
-
-            //draw patches j= # of sections
-            for (int j = 0; j < triStrip.Count; j++)
+            // VBO rendering for triangle patches
+            if (triStripVboManager != null && triStripVboManager.IsVboAvailable)
             {
-                //every time the section turns off and on is a new patch
-                int patchCount = triStrip[j].patchList.Count;
-
-                if (patchCount > 0)
-                {
-                    //for every new chunk of patch
-                    foreach (var triList in triStrip[j].patchList)
-                    {
-                        isDraw = false;
-                        int count2 = triList.Count;
-                        for (int i = 1; i < count2; i += 3)
-                        {
-                            //determine if point is in frustum or not
-                            if (triList[i].easting > pivEplus)
-                                continue;
-                            if (triList[i].easting < pivEminus)
-                                continue;
-                            if (triList[i].northing > pivNplus)
-                                continue;
-                            if (triList[i].northing < pivNminus)
-                                continue;
-
-                            //point is in frustum so draw the entire patch
-                            isDraw = true;
-                            break;
-                        }
-
-                        if (isDraw)
-                        {
-                            //draw the triangles in each triangle strip
-                            GL.Begin(PrimitiveType.TriangleStrip);
-                            {
-                                for (int i = 1; i < count2; i++) GL.Vertex2(triList[i].easting, triList[i].northing);
-                            }
-                            GL.End();
-                        }
-                    }
-                }
+                triStripVboManager.DrawVisiblePatches(toolPos.easting, toolPos.northing, 50.0);
             }
 
-            //draw 245 green for the tram tracks
+            //draw 245 green for the tram tracks using VBO
 
             if (tool.isDisplayTramControl && tram.displayMode != 0 && (trk.idx > -1))
             {
-                GL.Color3((byte)0, (byte)245, (byte)0);
                 GL.LineWidth(4);
 
-                if ((tram.displayMode == 1 || tram.displayMode == 2))
+                var tramVbo = tramVboCache?.GetVbo();
+                if (tramVbo != null)
                 {
-                    for (int i = 0; i < tram.tramList.Count; i++)
-                    {
-                        GL.Begin(PrimitiveType.LineStrip);
-                        for (int h = 0; h < tram.tramList[i].Count; h++)
-                        {
-                            GL.Vertex2(tram.tramList[i][h].easting, tram.tramList[i][h].northing);
-                        }
-                        GL.End();
-                    }
-                }
-
-                if (tram.displayMode == 1 || tram.displayMode == 3)
-                {
-                    //boundary tram list
-                    GL.Begin(PrimitiveType.LineStrip);
-                    for (int h = 0; h < tram.tramBndOuterArr.Count; h++)
-                    {
-                        GL.Vertex2(tram.tramBndOuterArr[h].easting, tram.tramBndOuterArr[h].northing);
-                    }
-                    for (int h = 0; h < tram.tramBndInnerArr.Count; h++)
-                    {
-                        GL.Vertex2(tram.tramBndInnerArr[h].easting, tram.tramBndInnerArr[h].northing);
-                    }
-                    GL.End();
+                    tramVbo.DrawTramLines(tram.displayMode, 1.0f);
                 }
             }
 

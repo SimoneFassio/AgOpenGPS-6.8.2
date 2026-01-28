@@ -165,6 +165,16 @@ namespace AgOpenGPS
         public List<CPatches> triStrip;
 
         /// <summary>
+        /// VBO manager for triangle strip rendering (backbuffer optimization)
+        /// </summary>
+        private TriStripVboManager triStripVboManager;
+
+        /// <summary>
+        /// Flag to track if VBO rendering has been enabled (to enable after GL context is active)
+        /// </summary>
+        private bool _vboRenderingEnabled = false;
+
+        /// <summary>
         /// AB Line object
         /// </summary>
         public CABLine ABLine;
@@ -173,6 +183,11 @@ namespace AgOpenGPS
         /// TramLine class for boundary and settings
         /// </summary>
         public CTram tram;
+
+        /// <summary>
+        /// VBO cache for tram rendering (backbuffer optimization)
+        /// </summary>
+        private TramVboCache tramVboCache;
 
         /// <summary>
         /// Contour Mode Instance
@@ -341,6 +356,10 @@ namespace AgOpenGPS
                 new CPatches(this)
             };
 
+            // Initialize VBO manager for backbuffer triangle rendering
+            triStripVboManager = new TriStripVboManager(triStrip);
+            // Note: VBO rendering will be enabled after OpenGL context is active (in oglBack_Paint)
+
             //our NMEA parser
             pn = new CNMEA(this);
 
@@ -383,6 +402,9 @@ namespace AgOpenGPS
 
             //instance of tram
             tram = new CTram(this);
+
+            // Initialize VBO cache for tram rendering
+            tramVboCache = new TramVboCache(tram);
 
             font = new AgOpenGPS.Core.DrawLib.Font(camera, ScreenTextures.Font);
 
@@ -745,6 +767,10 @@ namespace AgOpenGPS
         {
             SaveFormGPSWindowSettings();
 
+            // Dispose VBO managers
+            triStripVboManager?.Dispose();
+            tramVboCache?.Dispose();
+
             double minutesSinceStart = ((DateTime.Now - Process.GetCurrentProcess().StartTime).TotalSeconds) / 60;
             if (minutesSinceStart < 1) minutesSinceStart = 1;
 
@@ -883,6 +909,18 @@ namespace AgOpenGPS
             //SendSteerSettingsOutAutoSteerPort();
 
             AppModel.Fields.OpenField();
+
+            // Recreate VBOs if they were disposed (after field close)
+            if (triStripVboManager == null)
+            {
+                triStripVboManager = new TriStripVboManager(triStrip);
+                _vboRenderingEnabled = false; // Reset flag so VBO gets enabled after context is active
+            }
+            if (tramVboCache == null)
+            {
+                tramVboCache = new TramVboCache(tram);
+            }
+
             startCounter = 0;
 
             btnFieldStats.Visible = true;
@@ -1032,6 +1070,17 @@ namespace AgOpenGPS
             menustripLanguage.Enabled = true;
 
             AppModel.Fields.CloseField();
+
+            // Dispose VBOs to completely free OpenGL resources
+            triStripVboManager?.Dispose();
+            triStripVboManager = null;
+            tramVboCache?.Dispose();
+            tramVboCache = null;
+
+            // Force backbuffer clear to remove old visual data
+            oglBack.MakeCurrent();
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            oglBack.Refresh();
 
 
             //fix ManualOffOnAuto buttons

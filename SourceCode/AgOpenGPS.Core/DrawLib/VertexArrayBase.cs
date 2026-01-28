@@ -11,6 +11,7 @@ namespace AgOpenGPS.Core.DrawLib
 
         public VertexArrayBase(int nDimensions)
         {
+            NumDimensions = nDimensions;
             _bufId = GL.GenBuffer();
             Bind();
             GL.EnableVertexAttribArray(0);
@@ -19,9 +20,14 @@ namespace AgOpenGPS.Core.DrawLib
 
         public int Length { get; protected set; }
 
+        public int NumDimensions { get; private set; }
+
         public void Bind()
         {
             GL.BindBuffer(BufferTarget.ArrayBuffer, _bufId);
+            // Re-setup vertex attribute pointer to ensure it points to our VBO
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, NumDimensions, VertexAttribPointerType.Double, false, 0, 0);
         }
 
         private void DeleteBuffer()
