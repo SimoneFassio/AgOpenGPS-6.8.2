@@ -52,17 +52,17 @@ namespace AgIO
             Properties.Settings.Default.eth_loopTwo.ToString() + "." +
             Properties.Settings.Default.eth_loopThree.ToString() + "." +
             Properties.Settings.Default.eth_loopFour.ToString()), 15555);
-        
+
         public IPEndPoint epModule = new IPEndPoint(IPAddress.Parse(
                 Properties.Settings.Default.etIP_SubnetOne.ToString() + "." +
                 Properties.Settings.Default.etIP_SubnetTwo.ToString() + "." +
                 Properties.Settings.Default.etIP_SubnetThree.ToString() + ".255"), 8888);
-        
+
         public IPEndPoint epModule2 = new IPEndPoint(IPAddress.Parse(
                 Properties.Settings.Default.etIP_SubnetOne.ToString() + "." +
                 Properties.Settings.Default.etIP_SubnetTwo.ToString() + "." +
                 "137.255"), 8888);
-        
+
         private IPEndPoint epNtrip;
 
         public IPEndPoint epModuleSet = new IPEndPoint(IPAddress.Parse("255.255.255.255"), 8888);

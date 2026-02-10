@@ -276,7 +276,7 @@ namespace AgIO
                     Properties.Settings.Default.etIP_SubnetOne.ToString() + "." +
                     Properties.Settings.Default.etIP_SubnetTwo.ToString() + "." +
                     Properties.Settings.Default.etIP_SubnetThree.ToString() + ".255"), 8888);
-                
+
                 mf.epModule2 = new IPEndPoint(IPAddress.Parse(
                     Properties.Settings.Default.etIP_SubnetOne.ToString() + "." +
                     Properties.Settings.Default.etIP_SubnetTwo.ToString() + "." +
